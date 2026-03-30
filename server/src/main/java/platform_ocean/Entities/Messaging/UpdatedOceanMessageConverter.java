@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class UpdatedOceanMessageConverter extends JsonDeserializer<UpdatedDataMapper> implements Serializable {
@@ -38,7 +40,20 @@ public class UpdatedOceanMessageConverter extends JsonDeserializer<UpdatedDataMa
 
         boolean parsedPersist = persist.asBoolean();
         UUID parsedId = UUID.fromString(id.textValue());
-        return new UpdatedDataMapper(data, parsedPersist, parsedId);
+
+        TreeNode recipientsFromPayload = node.get("recipients");
+        List<UUID> parsedRecipients = null;
+        if (recipientsFromPayload != null && recipientsFromPayload.isArray()) {
+            parsedRecipients = new ArrayList<>();
+            for (int i = 0; i < ((JsonNode) recipientsFromPayload).size(); i++) {
+                String recipientStr = ((JsonNode) recipientsFromPayload).get(i).asText();
+                parsedRecipients.add(UUID.fromString(recipientStr));
+            }
+        }
+
+        UpdatedDataMapper result = new UpdatedDataMapper(data, parsedPersist, parsedId);
+        result.setRecipients(parsedRecipients);
+        return result;
     }
 
     @Bean

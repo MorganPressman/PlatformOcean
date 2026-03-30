@@ -1,9 +1,7 @@
 package platform_ocean.Controller.Messaging;
 
-import org.springframework.http.ResponseEntity;
 import platform_ocean.Entities.Messaging.DataMapper;
 import platform_ocean.Entities.Messaging.DeleteRequest;
-import platform_ocean.Entities.Messaging.SimpleDataMapper;
 import platform_ocean.Entities.Messaging.UpdatedDataMapper;
 
 import java.util.UUID;
@@ -26,10 +24,10 @@ import java.util.UUID;
 
 public interface MessagingControllerInterface {
 
-    ResponseEntity<SimpleDataMapper> createMessage(UUID clientKey, UUID pluginKey, DataMapper dataFromFrontend);
+    void createMessage(UUID clientKey, UUID pluginKey, DataMapper dataFromFrontend);
 
-    ResponseEntity<SimpleDataMapper> deleteMessage(UUID clientKey, UUID pluginKey, DeleteRequest messageID);
+    void deleteMessage(UUID clientKey, UUID pluginKey, DeleteRequest messageID);
 
-    ResponseEntity<SimpleDataMapper> updateMessage(UUID clientKey, UUID pluginKey, UpdatedDataMapper udm);
+    void updateMessage(UUID clientKey, UUID pluginKey, UpdatedDataMapper udm);
 
 }

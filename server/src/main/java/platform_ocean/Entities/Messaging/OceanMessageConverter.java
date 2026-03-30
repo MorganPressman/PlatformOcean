@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.springframework.context.annotation.Bean;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 public class OceanMessageConverter extends JsonDeserializer<DataMapper> {
 
@@ -30,7 +33,18 @@ public class OceanMessageConverter extends JsonDeserializer<DataMapper> {
         JsonNode persist = mapper.treeToValue(persistFromPayload, JsonNode.class);
 
         Boolean parsedPersist = persist.asBoolean();
-        return new DataMapper(data, parsedPersist);
+
+        TreeNode recipientsFromPayload = node.get("recipients");
+        List<UUID> parsedRecipients = null;
+        if (recipientsFromPayload != null && recipientsFromPayload.isArray()) {
+            parsedRecipients = new ArrayList<>();
+            for (int i = 0; i < ((JsonNode) recipientsFromPayload).size(); i++) {
+                String recipientStr = ((JsonNode) recipientsFromPayload).get(i).asText();
+                parsedRecipients.add(UUID.fromString(recipientStr));
+            }
+        }
+
+        return new DataMapper(data, parsedPersist, parsedRecipients);
     }
 
     @Bean

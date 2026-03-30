@@ -27,35 +27,46 @@ export default function useInterSubscription(routingKey, depKey) {
   useEffect(() => {
     if (!canSubscribe || !client || !depKey) return;
 
+    const messageHandler = (resp) => {
+      const deserialiseJSONHeaders = JSON.parse(resp.body);
+      const deserialiseJSON = deserialiseJSONHeaders.body;
+      const ParsedDatagram = {
+        sender: deserialiseJSON.sender,
+        message: JSON.parse(deserialiseJSON.message),
+        messageID: deserialiseJSON.messageID,
+      };
+      runMessageProtocol(ParsedDatagram, deserialiseJSON.protocol);
+    };
+
     const subscribe = () => {
-      const SubscriberRoutingAddress = `/topic/${depKey}/receive`;
+      const BroadcastAddress = `/topic/${depKey}/receive`;
+      const RecipientAddress = `/topic/${depKey}/${clientID}/receive`;
 
       try {
-        const subscription = client.subscribe(
-          SubscriberRoutingAddress,
-          (resp) => {
-            const deserialiseJSONHeaders = JSON.parse(resp.body);
-            const deserialiseJSON = deserialiseJSONHeaders.body;
-            const ParsedDatagram = {
-              sender: deserialiseJSON.sender,
-              message: JSON.parse(deserialiseJSON.message),
-              messageID: deserialiseJSON.messageID,
-            };
-            runMessageProtocol(ParsedDatagram, deserialiseJSON.protocol);
-          },
+        const broadcastSubscription = client.subscribe(
+          BroadcastAddress,
+          messageHandler,
           { id: `sub-${clientID}-${routingKey}-${depKey}` }
         );
-        return subscription;
+        const recipientSubscription = client.subscribe(
+          RecipientAddress,
+          messageHandler,
+          { id: `sub-${clientID}-${routingKey}-${depKey}-recipient` }
+        );
+        return { broadcastSubscription, recipientSubscription };
       } catch (err) {
         console.log(err);
       }
       return null;
     };
 
-    const subscription = subscribe();
+    const subscriptions = subscribe();
 
     return () => {
-      subscription && subscription.unsubscribe();
+      if (subscriptions) {
+        subscriptions.broadcastSubscription && subscriptions.broadcastSubscription.unsubscribe();
+        subscriptions.recipientSubscription && subscriptions.recipientSubscription.unsubscribe();
+      }
     };
   }, [client, clientID, routingKey, depKey, runMessageProtocol, canSubscribe]);
 

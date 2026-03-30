@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -21,6 +22,9 @@ public class DataMapper {
 
     @Transient
     protected JsonNode dataNode;
+
+    @Transient
+    private List<UUID> recipients;
 
     protected String data;
 
@@ -40,6 +44,11 @@ public class DataMapper {
         } catch (NullPointerException e) {
             e.printStackTrace();
         }
+    }
+
+    public DataMapper(JsonNode dataNode, boolean persist, List<UUID> recipients) throws JsonProcessingException {
+        this(dataNode, persist);
+        this.recipients = recipients;
     }
 
     public UUID getId() {
@@ -78,6 +87,14 @@ public class DataMapper {
         this.data = data;
     }
 
+    public List<UUID> getRecipients() {
+        return recipients;
+    }
+
+    public void setRecipients(List<UUID> recipients) {
+        this.recipients = recipients;
+    }
+
 //	private String serialiseJsonData(JsonNode unserialisedData) throws JsonProcessingException {
 //		ObjectMapper om = new ObjectMapper();
 //		return om.writeValueAsString(unserialisedData);
@@ -85,7 +102,7 @@ public class DataMapper {
 
     // Defines how class data is sent to the front-end
     public SimpleDataMapper castToSimpleDataMapper(MessageProtocol protocol) {
-        SimpleDataMapper sdmCasting = new SimpleDataMapper(this.clientKey, this.data, this.id, protocol);
+        SimpleDataMapper sdmCasting = new SimpleDataMapper(this.clientKey, this.data, this.id, protocol, this.recipients);
         return sdmCasting;
     }
 
