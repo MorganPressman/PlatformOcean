@@ -22,9 +22,6 @@ import java.util.UUID;
 @CrossOrigin
 public class MessagingController implements MessagingControllerInterface {
 
-    private static final String TOPIC_PREFIX = "/topic/";
-    private static final String RECEIVE_SUFFIX = "/receive";
-
     @Autowired
     private OceanService serv;
 
@@ -37,7 +34,7 @@ public class MessagingController implements MessagingControllerInterface {
     private void routeMessage(UUID pluginKey, List<UUID> recipients,
                               ResponseEntity<SimpleDataMapper> response) {
         Set<UUID> connected = clientRegistry.getConnectedClients();
-        StringBuilder topic = new StringBuilder(TOPIC_PREFIX).append(pluginKey).append('/');
+        StringBuilder topic = new StringBuilder("/topic/").append(pluginKey).append('/');
         int prefixLen = topic.length();
 
         Iterable<UUID> targets;
@@ -53,7 +50,7 @@ public class MessagingController implements MessagingControllerInterface {
 
         for (UUID target : targets) {
             topic.setLength(prefixLen);
-            topic.append(target).append(RECEIVE_SUFFIX);
+            topic.append(target).append("/receive");
             messagingTemplate.convertAndSend(topic.toString(), response);
         }
     }
@@ -61,8 +58,8 @@ public class MessagingController implements MessagingControllerInterface {
     private void sendErrorToSender(UUID pluginKey, UUID clientKey, HttpStatus status, UUID relatedMessageId) {
         if (!clientRegistry.isConnected(clientKey)) return;
 
-        StringBuilder topic = new StringBuilder(TOPIC_PREFIX)
-            .append(pluginKey).append('/').append(clientKey).append(RECEIVE_SUFFIX);
+        StringBuilder topic = new StringBuilder("/topic/")
+            .append(pluginKey).append('/').append(clientKey).append("/receive");
 
         SimpleDataMapper errorBody = new SimpleDataMapper(
             clientKey, null, relatedMessageId, MessageProtocol.ERROR, null

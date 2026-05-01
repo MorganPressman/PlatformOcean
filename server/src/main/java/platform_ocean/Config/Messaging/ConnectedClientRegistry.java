@@ -26,12 +26,10 @@ public class ConnectedClientRegistry {
         String sessionId = accessor.getSessionId();
         if (clientIdStr == null || sessionId == null) return;
 
-        try {
-            UUID clientId = UUID.fromString(clientIdStr);
-            clientSessions.computeIfAbsent(clientId, k -> ConcurrentHashMap.newKeySet()).add(sessionId);
-            connectedClients.add(clientId);
-            sessionToClient.put(sessionId, clientId);
-        } catch (IllegalArgumentException ignored) {}
+        UUID clientId = UUID.fromString(clientIdStr);
+        clientSessions.computeIfAbsent(clientId, k -> ConcurrentHashMap.newKeySet()).add(sessionId);
+        connectedClients.add(clientId);
+        sessionToClient.put(sessionId, clientId);
     }
 
     @EventListener
