@@ -30,6 +30,11 @@ export default function useInterSubscription(routingKey, depKey) {
     const messageHandler = (resp) => {
       const deserialiseJSONHeaders = JSON.parse(resp.body);
       const deserialiseJSON = deserialiseJSONHeaders.body;
+      if (!deserialiseJSON) return;
+      if (deserialiseJSON.protocol === "ERROR") {
+        console.error(`[dependency ${depKey}] server error`, deserialiseJSON);
+        return;
+      }
       const ParsedDatagram = {
         sender: deserialiseJSON.sender,
         message: JSON.parse(deserialiseJSON.message),
@@ -39,34 +44,25 @@ export default function useInterSubscription(routingKey, depKey) {
     };
 
     const subscribe = () => {
-      const BroadcastAddress = `/topic/${depKey}/receive`;
       const RecipientAddress = `/topic/${depKey}/${clientID}/receive`;
 
       try {
-        const broadcastSubscription = client.subscribe(
-          BroadcastAddress,
+        const subscription = client.subscribe(
+          RecipientAddress,
           messageHandler,
           { id: `sub-${clientID}-${routingKey}-${depKey}` }
         );
-        const recipientSubscription = client.subscribe(
-          RecipientAddress,
-          messageHandler,
-          { id: `sub-${clientID}-${routingKey}-${depKey}-recipient` }
-        );
-        return { broadcastSubscription, recipientSubscription };
+        return subscription;
       } catch (err) {
         console.log(err);
       }
       return null;
     };
 
-    const subscriptions = subscribe();
+    const subscription = subscribe();
 
     return () => {
-      if (subscriptions) {
-        subscriptions.broadcastSubscription && subscriptions.broadcastSubscription.unsubscribe();
-        subscriptions.recipientSubscription && subscriptions.recipientSubscription.unsubscribe();
-      }
+      if (subscription) subscription.unsubscribe();
     };
   }, [client, clientID, routingKey, depKey, runMessageProtocol, canSubscribe]);
 

@@ -5,4 +5,5 @@ public enum MessageProtocol {
     UPDATE,
     DELETE,
     PERSIST,
+    ERROR,
 }

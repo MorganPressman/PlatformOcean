@@ -2,19 +2,20 @@ import { useState, useEffect } from "react";
 import * as Stomp from "stompjs";
 import SockJS from "sockjs-client";
 
-export default function ClientGenerator(endpoint) {
+export default function ClientGenerator(endpoint, clientID) {
   const [client, setClient] = useState(null);
 
   useEffect(() => {
     const socket = new SockJS(`${endpoint}/PlatformOcean`); // handshake with endpoint
     const clientHelper = Stomp.over(socket);
     clientHelper.debug = () => {};
-    clientHelper.connect({}, () => setClient(clientHelper));
+    const connectHeaders = clientID ? { clientID } : {};
+    clientHelper.connect(connectHeaders, () => setClient(clientHelper));
     // Cleanup on unmount
     return () => {
       clientHelper && clientHelper.disconnect();
     };
-  }, [endpoint]);
+  }, [endpoint, clientID]);
 
   return client;
 }

@@ -5,7 +5,7 @@ import { NetworkIPContext } from "../Contexts/ServerIPContext";
 import ClientGenerator from "./ClientGenerator";
 
 export default function Gateway({ endpoint, clientState, username }) {
-  const client = ClientGenerator(endpoint);
+  const client = ClientGenerator(endpoint, clientState?.id);
   const [pluginDescriptors, setPluginDescriptors] = useState([]);
 
   useEffect(() => {

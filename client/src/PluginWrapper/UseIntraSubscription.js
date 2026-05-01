@@ -19,6 +19,11 @@ export default function useIntraSubscription(routingKey) {
     const messageHandler = (resp) => {
       const deserialiseJSONHeaders = JSON.parse(resp.body);
       const deserialiseJSON = deserialiseJSONHeaders.body;
+      if (!deserialiseJSON) return;
+      if (deserialiseJSON.protocol === "ERROR") {
+        console.error(`[plugin ${routingKey}] server error`, deserialiseJSON);
+        return;
+      }
       const JSONsender = deserialiseJSON.sender;
       const JSONmessage = JSON.parse(deserialiseJSON.message);
       const JSONmessageID = deserialiseJSON.messageID;
@@ -32,34 +37,25 @@ export default function useIntraSubscription(routingKey) {
     };
 
     const subscribe = () => {
-      const BroadcastAddress = `/topic/${routingKey}/receive`;
       const RecipientAddress = `/topic/${routingKey}/${clientID}/receive`;
       try {
-        const broadcastSubscription = client.subscribe(
-          BroadcastAddress,
+        const subscription = client.subscribe(
+          RecipientAddress,
           messageHandler,
           { id: `sub-${clientID}-${routingKey}` }
         );
-        const recipientSubscription = client.subscribe(
-          RecipientAddress,
-          messageHandler,
-          { id: `sub-${clientID}-${routingKey}-recipient` }
-        );
         markReady(routingKey);
-        return { broadcastSubscription, recipientSubscription };
+        return subscription;
       } catch (error) {
         console.log(error);
       }
       return null;
     };
 
-    const subscriptions = subscribe();
+    const subscription = subscribe();
 
     return () => {
-      if (subscriptions) {
-        subscriptions.broadcastSubscription && subscriptions.broadcastSubscription.unsubscribe();
-        subscriptions.recipientSubscription && subscriptions.recipientSubscription.unsubscribe();
-      }
+      if (subscription) subscription.unsubscribe();
     };
   }, [runMessageProtocol, markReady, client, clientID, routingKey]);
 
